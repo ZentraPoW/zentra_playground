@@ -33,10 +33,10 @@ def get(_asset, _var, _default = None, _key = None):
         var = _var
 
     k = '%s-%s' % (asset_name, var)
-    state = states[-1]
-    v = state.get(k)
-    if v is not None:
-        return v
+    for state in reversed(states):
+        if k in state:
+            v = state[k]
+            return v
 
     return value
 
