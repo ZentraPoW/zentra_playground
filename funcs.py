@@ -60,13 +60,13 @@ def token_create(info, args):
 
     name = args['a'][1]
     assert type(name) is str
-    decemal = int(args['a'][2])
-    assert type(decemal) is int
-    assert decemal >= 0 and decemal <= 18
+    decimal = int(args['a'][2])
+    assert type(decimal) is int
+    assert decimal >= 0 and decimal <= 18
 
     functions = ['transfer', 'approve', 'transfer_from', 'token_mint_once', 'asset_update_ownership', 'asset_update_functions']
     put(addr, tick, 'name', name)
-    put(addr, tick, 'decemal', decemal)
+    put(addr, tick, 'decimal', decimal)
     put(addr, 'asset', 'functions', functions, tick)
 
 def transfer(info, args):
