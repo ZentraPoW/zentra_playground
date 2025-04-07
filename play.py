@@ -2,10 +2,9 @@
 
 import code
 import readline
-# import rlcompleter
+import rlcompleter
 import sys
 
-from space import put, get, states, sender
 import space
 import funcs
 
@@ -16,7 +15,7 @@ class NamedFunction:
 
     def __call__(self, *args):
         a = list(args)
-        r = self.f({'sender': 'alice'}, {'p': 'zen', 'a': a, 'f': self.name})
+        r = self.f({'sender': space.sender}, {'p': 'zen', 'a': a, 'f': self.name})
         space.nextblock()
         return r
 
@@ -29,16 +28,21 @@ class NamedFunction:
 def get_block_number():
     return len(space.states)
 
+def get_sender():
+    return space.sender
+
+def set_sender(sender):
+    space.sender = sender
+
 # Create custom namespace with imported functions
 namespace = {
-    'put': put,
-    'get': get, 
-    'states': states,
+    'put': space.put,
+    'get': space.get, 
+    'states': space.states,
     'blocknumber': get_block_number,
     'nextblock': space.nextblock,
-    'sender': sender,
-    'accounts': [],
-    'a': [],
+    'sender': get_sender,
+    'set_sender': set_sender,
     '__name__': '__console__',
     '__doc__': None,
 }
@@ -54,8 +58,8 @@ for func in dir(funcs):
 readline.parse_and_bind("tab: complete")
 
 # Create and start interactive console
-console = code.InteractiveConsole(namespace)
-console.interact(banner="""
+# console = code.InteractiveConsole(namespace)
+code.interact(banner="""
 Zentra Interactive python console
 Available commands:
 - put(owner, asset, var, value, key=None)  # Store state
@@ -73,4 +77,4 @@ Example:
 >>> nextblock()
 >>> asset_create('USDC')
 Ok, let's start!
-""")
+""", local=namespace)
