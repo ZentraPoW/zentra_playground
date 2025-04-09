@@ -28,11 +28,9 @@ class NamedFunction:
 def get_block_number():
     return len(space.states)
 
-def get_sender():
-    return space.sender
-
 def set_sender(sender):
     space.sender = sender
+    namespace['sender'] = space.sender
 
 # Create custom namespace with imported functions
 namespace = {
@@ -41,7 +39,7 @@ namespace = {
     'states': space.states,
     'blocknumber': get_block_number,
     'nextblock': space.nextblock,
-    'sender': get_sender,
+    'sender': space.sender,
     'set_sender': set_sender,
     '__name__': '__console__',
     '__doc__': None,
@@ -66,6 +64,7 @@ Available commands:
 - get(asset, var, default=None, key=None)  # Get state
 - blocknumber()  # Current block number
 - states  # View all states
+- set_sender()  # Current sender
 - sender  # Current sender
 
 Example:
