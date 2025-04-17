@@ -306,7 +306,7 @@ def trade_limit_order(info, args):
         sender_balance += value_1
         assert sender_balance >= 0
         put(addr, tick_1, 'balance', sender_balance, addr)
-        put(addr, 'trade', f'{pair}_sell', [addr, value_1, value_2], str(trade_sell_start))
+        # put(addr, 'trade', f'{pair}_sell', [addr, value_1, value_2], str(trade_sell_start))
 
     elif value_1 > 0 and value_2 < 0:
         # print('trade_buy_start, handle, sender', trade_buy_start, addr, sender)
@@ -319,24 +319,73 @@ def trade_limit_order(info, args):
         assert sender_balance >= 0
         put(addr, tick_2, 'balance', sender_balance, addr)
 
-    # TODO: use linked list, insert the buy/sell order in the right position
     if value_1 < 0 and value_2 > 0:
-        put(addr, 'trade', f'{pair}_sell', [addr, value_1, value_2], str(trade_sell_end))
-        trade_sell_end += 1
-        put(addr, 'trade', 'sell_end', trade_sell_end)
+        trade_sell_no = trade_sell_start
+        while True:
+            sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
+            # print('%s:%s'%(getframeinfo(currentframe()).filename, getframeinfo(currentframe()).lineno), trade_sell_no, sell)
+            if sell is None:
+                put(addr, 'trade', f'{pair}_sell', [addr, value_1, value_2, None, None], str(trade_sell_end))
+                trade_sell_end += 1
+                put(addr, 'trade', 'sell_end', trade_sell_end)
+                break
+            else:
+                # print('%s:%s'%(getframeinfo(currentframe()).filename, getframeinfo(currentframe()).lineno), 'price', -sell[1] / sell[2])
+                if (- value_1 / value_2) < (- sell[1] / sell[2]):
+                    prev_sell_id = sell[4]
+                    put(addr, 'trade', f'{pair}_sell', [addr, value_1, value_2, trade_sell_no, prev_sell_id], str(trade_sell_end))
+                    if prev_sell_id is None:
+                        put(addr, 'trade', 'sell_start', trade_sell_end)
+                    last_sell_id = trade_sell_end
+                    trade_sell_end += 1
+                    print('trade_sell_end', trade_sell_end)
+                    put(addr, 'trade', 'sell_end', trade_sell_end)
+                    print('trade_sell_no', trade_sell_no)
+
+                    print('last_sell_id', last_sell_id)
+                    sell[4] = last_sell_id
+                    put(addr, 'trade', f'{pair}_sell', sell, str(trade_sell_no))
+                    if prev_sell_id is not None:
+                        print('prev_buy_id', prev_sell_id)
+                        prev_sell = get('trade', f'{pair}_sell', None, str(prev_sell_id))
+                        if prev_sell is not None:
+                            prev_sell[3] = last_sell_id
+                            put(addr, 'trade', f'{pair}_sell', prev_sell, str(prev_sell_id))
+                    break
+
+                if sell[3] is None:
+                    break
+            trade_sell_no = sell[3]
+
+        # THIS IS FOR DEBUG
+        trade_sell_no = 1
+        while trade_sell_no != trade_sell_end:
+            sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
+            print(trade_sell_no, 'sell', -sell[1]/sell[2], sell)
+            trade_sell_no += 1
+
+        trade_sell_start = get('trade', 'sell_start', 1)
+        print('trade_sell_start', trade_sell_start) # TODO not correct
+        trade_sell_no = trade_sell_start
+        while True:
+            sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
+            print('>', trade_sell_no, 'sell', -sell[1]/sell[2], sell)
+            if sell[3] is None:
+                break
+            trade_sell_no = sell[3]
 
     elif value_1 > 0 and value_2 < 0:
         trade_buy_no = trade_buy_start
         while True:
             buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
-            print('%s:%s'%(getframeinfo(currentframe()).filename, getframeinfo(currentframe()).lineno), trade_buy_no, buy)
+            # print('%s:%s'%(getframeinfo(currentframe()).filename, getframeinfo(currentframe()).lineno), trade_buy_no, buy)
             if buy is None:
                 put(addr, 'trade', f'{pair}_buy', [addr, value_1, value_2, None, None], str(trade_buy_end))
                 trade_buy_end += 1
                 put(addr, 'trade', 'buy_end', trade_buy_end)
                 break
             else:
-                print('%s:%s'%(getframeinfo(currentframe()).filename, getframeinfo(currentframe()).lineno), 'price', -buy[1] / buy[2])
+                # print('%s:%s'%(getframeinfo(currentframe()).filename, getframeinfo(currentframe()).lineno), 'price', -buy[1] / buy[2])
                 if (- value_1 / value_2) > (- buy[1] / buy[2]):
                     prev_buy_id = buy[4]
                     put(addr, 'trade', f'{pair}_buy', [addr, value_1, value_2, trade_buy_no, prev_buy_id], str(trade_buy_end))
