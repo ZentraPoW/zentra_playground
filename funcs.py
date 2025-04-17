@@ -198,67 +198,67 @@ def bridge_incoming(info, args):
     total += amount
     put(asset_owner, tick, 'total', total)
 
-def bridge_set_operator(info, args):
-    assert args['f'] == 'bridge_set_operator'
-    print('bridge_set_operator', args)
+# def bridge_set_operator(info, args):
+#     assert args['f'] == 'bridge_set_operator'
+#     print('bridge_set_operator', args)
 
-    tick = args['a'][0]
-    assert type(tick) is str
-    assert len(tick) > 0 and len(tick) < 42
-    assert tick[0] in string.ascii_uppercase
-    assert set(tick) <= set(string.ascii_uppercase+string.digits+'_')
+#     tick = args['a'][0]
+#     assert type(tick) is str
+#     assert len(tick) > 0 and len(tick) < 42
+#     assert tick[0] in string.ascii_uppercase
+#     assert set(tick) <= set(string.ascii_uppercase+string.digits+'_')
 
-    asset_owner = get('asset', 'owner', None, tick)
-    sender = info['sender']
-    handle = handle_lookup(sender)
-    addr = handle or sender
-    print('bridge_set_operator', asset_owner, addr)
-    assert addr == asset_owner, "Only the asset owner can perform this operation"
+#     asset_owner = get('asset', 'owner', None, tick)
+#     sender = info['sender']
+#     handle = handle_lookup(sender)
+#     addr = handle or sender
+#     print('bridge_set_operator', asset_owner, addr)
+#     assert addr == asset_owner, "Only the asset owner can perform this operation"
 
-    operator = args['a'][1].lower()
-    assert type(operator) is str
-    assert len(operator) == 42
-    assert operator.startswith('0x')
-    assert set(operator[2:]) <= set(string.digits+'abcdef')
+#     operator = args['a'][1].lower()
+#     assert type(operator) is str
+#     assert len(operator) == 42
+#     assert operator.startswith('0x')
+#     assert set(operator[2:]) <= set(string.digits+'abcdef')
 
-    put(addr, tick, 'incoming_operator', operator)
+#     put(addr, tick, 'incoming_operator', operator)
 
-def bridge_with_token_purchase(info, args):
-    assert args['f'] == 'bridge_with_token_purchase'
-    print('bridge_with_token_purchase', args)
+# def bridge_with_token_purchase(info, args):
+#     assert args['f'] == 'bridge_with_token_purchase'
+#     print('bridge_with_token_purchase', args)
 
-    tick = args['a'][0]
-    assert type(tick) is str
-    assert len(tick) > 0 and len(tick) < 42
-    assert tick[0] in string.ascii_uppercase
-    assert set(tick) <= set(string.ascii_uppercase+string.digits+'_')
+#     tick = args['a'][0]
+#     assert type(tick) is str
+#     assert len(tick) > 0 and len(tick) < 42
+#     assert tick[0] in string.ascii_uppercase
+#     assert set(tick) <= set(string.ascii_uppercase+string.digits+'_')
 
-    operator = get(tick, 'incoming_operator', None)
-    assert operator is not None, "Bridge is not initialized"
+#     operator = get(tick, 'incoming_operator', None)
+#     assert operator is not None, "Bridge is not initialized"
 
-    sender = info['sender']
-    assert sender == operator, "Only the operator can perform this operation"
+#     sender = info['sender']
+#     assert sender == operator, "Only the operator can perform this operation"
 
-    amount = int(args['a'][1])
-    assert amount > 0
+#     amount = int(args['a'][1])
+#     assert amount > 0
 
-    receiver = args['a'][2].lower()
-    assert len(receiver) <= 42
-    assert type(receiver) is str
-    if len(receiver) == 42:
-        assert receiver.startswith('0x')
-        assert set(receiver[2:]) <= set(string.digits+'abcdef')
-    else:
-        assert len(receiver) > 4
+#     receiver = args['a'][2].lower()
+#     assert len(receiver) <= 42
+#     assert type(receiver) is str
+#     if len(receiver) == 42:
+#         assert receiver.startswith('0x')
+#         assert set(receiver[2:]) <= set(string.digits+'abcdef')
+#     else:
+#         assert len(receiver) > 4
 
-    balance = int(get(tick, 'balance', 0, receiver))
-    balance += amount
-    put(receiver, tick, 'balance', balance, receiver)
+#     balance = int(get(tick, 'balance', 0, receiver))
+#     balance += amount
+#     put(receiver, tick, 'balance', balance, receiver)
 
-    asset_owner = get('asset', 'owner', None, tick)
-    total = int(get(tick, 'total', 0, receiver))
-    total += amount
-    put(asset_owner, tick, 'total', total)
+#     asset_owner = get('asset', 'owner', None, tick)
+#     total = int(get(tick, 'total', 0, receiver))
+#     total += amount
+#     put(asset_owner, tick, 'total', total)
 
 
 # def token_sell_bondingcurve(info, args):
@@ -290,8 +290,6 @@ def trade_limit_order(info, args):
 
     print('pair', pair, value_1, value_2)
     assert value_1 * value_2 < 0
-    #orderbook_sell = get('trade', 'sell', {})
-    #orderbook_buy = get('trade', 'buy', {})
 
     trade_sell_start = get('trade', 'sell_start', 1)
     trade_sell_end = get('trade', 'sell_end', 1)
@@ -308,18 +306,6 @@ def trade_limit_order(info, args):
         put(addr, tick_1, 'balance', sender_balance, addr)
         # put(addr, 'trade', f'{pair}_sell', [addr, value_1, value_2], str(trade_sell_start))
 
-    elif value_1 > 0 and value_2 < 0:
-        # print('trade_buy_start, handle, sender', trade_buy_start, addr, sender)
-
-        # orderbook_buy[str(trade_id)] = [addr, value_1, value_2]
-        sender_balance = get(tick_2, 'balance', 0, addr)
-        # print('tick_2 balance', sender_balance, value_2, sender_balance + value_2)
-        print('price', -value_1 / value_2)
-        sender_balance += value_2
-        assert sender_balance >= 0
-        put(addr, tick_2, 'balance', sender_balance, addr)
-
-    if value_1 < 0 and value_2 > 0:
         trade_sell_no = trade_sell_start
         while True:
             sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
@@ -375,6 +361,16 @@ def trade_limit_order(info, args):
             trade_sell_no = sell[3]
 
     elif value_1 > 0 and value_2 < 0:
+        # print('trade_buy_start, handle, sender', trade_buy_start, addr, sender)
+
+        # orderbook_buy[str(trade_id)] = [addr, value_1, value_2]
+        sender_balance = get(tick_2, 'balance', 0, addr)
+        # print('tick_2 balance', sender_balance, value_2, sender_balance + value_2)
+        print('price', -value_1 / value_2)
+        sender_balance += value_2
+        assert sender_balance >= 0
+        put(addr, tick_2, 'balance', sender_balance, addr)
+
         trade_buy_no = trade_buy_start
         while True:
             buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
@@ -450,7 +446,6 @@ def trade_limit_order(info, args):
 
         trade_buy_no = trade_buy_start
         while trade_buy_no != trade_buy_end:
-            # print('trade_buy_no', trade_buy_no, 'trade_buy_end', trade_buy_end)
             buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
             print('buy', buy)
             if not buy:
@@ -462,9 +457,6 @@ def trade_limit_order(info, args):
                 continue
 
             matched_price = (buy_price + sell_price) // 2
-            # print('match', buy_price, sell_price, matched_price)
-            # print('sell1', sell)
-            # print('buy1 ', buy)
             dx = min(-sell[1], sell[2] * K // matched_price, buy[1])
             print('match price', -sell[1], sell[2] * K // matched_price, buy[1], -buy[2] // matched_price)
             print(dx, matched_price)
@@ -473,8 +465,6 @@ def trade_limit_order(info, args):
 
             buy[1] -= dx
             buy[2] += dx * matched_price // K
-            # print('sell2', sell)
-            # print('buy2 ', buy)
 
             sender_balance = get(tick_1, 'balance', 0, sell[0])
             # print('tick_1 balance', sender_balance, sender_balance + dx)
@@ -490,20 +480,14 @@ def trade_limit_order(info, args):
 
             if buy[1] == 0:
                 buy_to_remove.add(trade_buy_no)
-                # print('buy remove', trade_buy_no, buy)
 
                 if buy[2] != 0:
                     buy_to_refund.append(buy)
-                    # print('buy refund', buy)
 
             trade_buy_no += 1
 
-        # print('orderbook_buy', orderbook_buy)
         for i in buy_to_remove:
-            # print('remove buy', i)
-            # del orderbook_buy[str(i)]
             put('', 'trade', f'{pair}_buy', None, str(i))
-            # orderbook_buy_keys.remove(i)
 
         if sell[1] == 0:
             sell_to_remove.add(trade_sell_no)
@@ -515,17 +499,10 @@ def trade_limit_order(info, args):
 
         trade_sell_no += 1
 
-    # print('orderbook_sell1', orderbook_sell)
-    # print('sell_to_remove', sell_to_remove)
     for i in sell_to_remove:
-        # print('remove sell', i)
-        # del orderbook_sell[str(i)]
         put('', 'trade', f'{pair}_sell', None, str(i))
-    # print('orderbook_sell2', orderbook_sell)
 
     for i in buy_to_refund:
-        # print('buy_to_refund', i)
-        # del orderbook_sell[str(i)]
         sender_balance = get(tick_2, 'balance', 0, i[0])
         print('tick_2 balance', sender_balance, sender_balance - i[2])
         sender_balance -= i[2]
@@ -534,14 +511,12 @@ def trade_limit_order(info, args):
 
     for i in sell_to_refund:
         print('sell_to_refund', i)
-        # del orderbook_sell[str(i)]
 
 
 def trade_market_order(info, args):
     assert args['f'] == 'trade_market_order'
     sender = info['sender']
     handle = handle_lookup(sender)
-    # print('handle sender', handle, sender)
 
     tick_1 = args['a'][0]
     tick_2 = args['a'][2]
@@ -565,15 +540,9 @@ def trade_market_order(info, args):
 
     K = 10**18
     if value_2 is None and value_1 < 0:
-        # orderbook_buy = get('trade', 'buy', {})
-        # print('orderbook_buy', orderbook_buy)
-
-        # 遍历和排序，之后用链表和跳表增加效率
         orderbook_buy_by_price = []
         trade_buy_no = trade_buy_start
         while trade_buy_no != trade_buy_end:
-        # for buy_start in orderbook_buy:
-            # buy = orderbook_buy[buy_start]
             buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
             print('buy', buy)
             if not buy:
@@ -586,7 +555,6 @@ def trade_market_order(info, args):
         orderbook_buy_by_price.sort(reverse = False)
         # print('orderbook_buy_by_price', orderbook_buy_by_price)
 
-        # 预先扣除 tick 1 资金
         sender_balance = get(tick_1, 'balance', 0, handle)
         # print('tick_1 balance', sender_balance, value_1, sender_balance + value_1)
         sender_balance += value_1
@@ -594,7 +562,6 @@ def trade_market_order(info, args):
         put(handle, tick_1, 'balance', sender_balance, handle) # consider delay put
 
         for i in orderbook_buy_by_price:
-            # buy = orderbook_buy[i[1]]
             buy = get('trade', f'{pair}_buy', None, str(i[1]))
 
             price = i[0]
@@ -633,14 +600,10 @@ def trade_market_order(info, args):
         put(handle, tick_1, 'balance', sender_balance, handle)
 
     elif value_1 is None and value_2 < 0:
-        # orderbook_sell = get('trade', 'sell', {})
-        # print('orderbook_sell', orderbook_sell)
         orderbook_sell_by_price = []
 
         trade_sell_no = trade_sell_start
         while trade_sell_no != trade_sell_end:
-        # for sell_start in orderbook_sell:
-        #     sell = orderbook_sell[sell_start]
             sell = get('trade', f'{pair}_buy', None, str(trade_sell_no))
             print('sell', sell)
             if not sell:
@@ -660,7 +623,6 @@ def trade_market_order(info, args):
         put(handle, tick_2, 'balance', sender_balance, handle)
 
         for i in orderbook_sell_by_price:
-            # sell = orderbook_sell[i[1]]
             sell = get('trade', f'{pair}_sell', None, str(i[1]))
             price = i[0]
             # print(i, sell)
@@ -688,7 +650,6 @@ def trade_market_order(info, args):
                 print('value_2 break')
                 break
 
-        print(value_2)
         sender_balance = get(tick_2, 'balance', 0, handle)
         sender_balance -= value_2
         assert sender_balance >= 0
