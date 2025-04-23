@@ -377,7 +377,7 @@ def trade_limit_order(info, args):
                 break
             else:
                 # print('%s:%s'%(getframeinfo(currentframe()).filename, getframeinfo(currentframe()).lineno), 'price', -buy[1] / buy[2])
-                if (- value_1 / value_2) > (- buy[1] / buy[2]):
+                if (- value_1 / value_2) >= (- buy[1] / buy[2]):
                     prev_buy_id = buy[4]
                     put(addr, 'trade', f'{pair}_buy', [addr, value_1, value_2, trade_buy_no, prev_buy_id], str(trade_buy_end))
                     if prev_buy_id is None:
@@ -488,11 +488,9 @@ def trade_limit_order(info, args):
 
         if sell[1] == 0:
             sell_to_remove.add(trade_sell_no)
-            # print('sell remove', trade_sell_no, sell)
 
             if sell[2] * K // matched_price == 0:
                 sell_to_refund.append(sell)
-                # print('sell refund', sell)
 
         trade_sell_no += 1
 
@@ -531,9 +529,9 @@ def trade_market_order(info, args):
         assert value_2 < 0
 
     trade_sell_start = get('trade', 'sell_start', 1)
-    trade_sell_end = get('trade', 'sell_end', 1)
+    # trade_sell_end = get('trade', 'sell_end', 1)
     trade_buy_start = get('trade', 'buy_start', 1)
-    trade_buy_end = get('trade', 'buy_end', 1)
+    # trade_buy_end = get('trade', 'buy_end', 1)
 
     K = 10**18
     if value_2 is None and value_1 < 0:
@@ -543,32 +541,16 @@ def trade_market_order(info, args):
         assert sender_balance >= 0
         put(handle, tick_1, 'balance', sender_balance, handle) # consider delay put
 
-        # orderbook_buy_by_price = []
-        # trade_buy_no = trade_buy_start
-        # while trade_buy_no != trade_buy_end:
-        #     buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
-        #     print('buy', buy)
-        #     if not buy:
-        #         trade_buy_no += 1
-        #         continue
-        #     buy_price = - buy[2] * K // buy[1]
-        #     orderbook_buy_by_price.append([buy_price, trade_buy_no])
-        #     trade_buy_no += 1
-
-        # orderbook_buy_by_price.sort(reverse = False)
-
-        # for i in orderbook_buy_by_price:
-
         print('trade_buy_start', trade_buy_start)
         trade_buy_no = trade_buy_start
         while True:
             buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
-            # print('>', trade_buy_no, 'buy', -buy[1]/buy[2], buy)
             if buy is None or buy[3] is None:
                 break
+            print('>', trade_buy_no, 'buy', -buy[1]/buy[2], buy)
             trade_buy_no = buy[3]
 
-            buy = get('trade', f'{pair}_buy', None, str(i[1]))
+            buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
 
             price = - buy[2] * K // buy[1]
             print(price, buy)
@@ -578,9 +560,9 @@ def trade_market_order(info, args):
             buy[2] += dx * price // K
             print('dx1', dx, buy)
             if buy[1] == 0 and buy[2] == 0:
-                put('', 'trade', f'{pair}_buy', None, str(i[1]))
+                put('', 'trade', f'{pair}_buy', None, str(trade_buy_no))
             else:
-                put('', 'trade', f'{pair}_buy', buy, str(i[1]))
+                put('', 'trade', f'{pair}_buy', buy, str(trade_buy_no))
 
             sender_balance = get(tick_2, 'balance', 0, handle)
             # print('tick_2 balance2', sender_balance)
@@ -596,9 +578,6 @@ def trade_market_order(info, args):
                 print('value_1 break')
                 break
 
-            # TODO: save buy data
-            # TODO: remove buy data if zero
-
         print(value_1)
         sender_balance = get(tick_1, 'balance', 0, handle)
         sender_balance -= value_1
@@ -612,25 +591,6 @@ def trade_market_order(info, args):
         assert sender_balance >= 0
         put(handle, tick_2, 'balance', sender_balance, handle)
 
-        # orderbook_sell_by_price = []
-
-        # trade_sell_no = trade_sell_start
-        # while trade_sell_no != trade_sell_end:
-        #     sell = get('trade', f'{pair}_buy', None, str(trade_sell_no))
-        #     print('sell', sell)
-        #     if not sell:
-        #         trade_sell_no += 1
-        #         continue
-        #     sell_price = - sell[1] * K // sell[2]
-        #     orderbook_sell_by_price.append([sell_price, trade_sell_no])
-        #     trade_sell_no += 1
-
-        # orderbook_sell_by_price.sort(reverse = True)
-        # print('orderbook_sell_by_price', orderbook_sell_by_price)
-
-        # for i in orderbook_sell_by_price:
-
-
         print('trade_sell_start', trade_sell_start)
         trade_sell_no = trade_sell_start
         while True:
@@ -640,7 +600,7 @@ def trade_market_order(info, args):
                 break
             trade_sell_no = sell[3]
 
-            sell = get('trade', f'{pair}_sell', None, str(i[1]))
+            sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
             price = - sell[1] * K // sell[2]
             print(price, sell)
             dx = min(-sell[1], sell[2] * K // price, -value_2)
@@ -649,9 +609,9 @@ def trade_market_order(info, args):
             sell[2] += dx * price // K
             print('dx2', dx, sell)
             if sell[1] == 0 and sell[2] == 0:
-                put('', 'trade', f'{pair}_sell', None, str(i[1]))
+                put('', 'trade', f'{pair}_sell', None, str(trade_sell_no))
             else:
-                put('', 'trade', f'{pair}_sell', sell, str(i[1]))
+                put('', 'trade', f'{pair}_sell', sell, str(trade_sell_no))
 
             sender_balance = get(tick_1, 'balance', 0, handle)
             # print('tick_1 balance', sender_balance)
@@ -664,7 +624,7 @@ def trade_market_order(info, args):
             if value_2 > 0:
                 raise
             if value_2 == 0:
-                print('value_2 break')
+                # print('value_2 break')
                 break
 
         sender_balance = get(tick_2, 'balance', 0, handle)
