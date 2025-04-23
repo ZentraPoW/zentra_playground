@@ -313,7 +313,7 @@ def trade_limit_order(info, args):
                 break
             else:
                 # print('%s:%s'%(getframeinfo(currentframe()).filename, getframeinfo(currentframe()).lineno), 'price', -sell[1] / sell[2])
-                if (- value_1 / value_2) < (- sell[1] / sell[2]):
+                if (- value_1 / value_2) <= (- sell[1] / sell[2]):
                     prev_sell_id = sell[4]
                     put(addr, 'trade', f'{pair}_sell', [addr, value_1, value_2, trade_sell_no, prev_sell_id], str(trade_sell_end))
                     if prev_sell_id is None:
@@ -353,7 +353,7 @@ def trade_limit_order(info, args):
         trade_sell_no = trade_sell_start
         while True:
             sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
-            if sell[3] is None:
+            if sell is None or sell[3] is None:
                 break
             print('>', trade_sell_no, 'sell', -sell[1]/sell[2], sell)
             trade_sell_no = sell[3]
@@ -410,19 +410,19 @@ def trade_limit_order(info, args):
         trade_buy_no = 1
         while trade_buy_no != trade_buy_end:
             buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
+            print(trade_buy_no, 'buy', buy)
             trade_buy_no += 1
             if buy is None:
                 continue
-            print(trade_buy_no, 'buy', -buy[1]/buy[2], buy)
 
         trade_buy_start = get('trade', 'buy_start', 1)
         print('trade_buy_start', trade_buy_start)
         trade_buy_no = trade_buy_start
         while True:
             buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
+            print('>', trade_buy_no, 'buy', buy)
             if buy is None or buy[3] is None:
                 break
-            print('>', trade_buy_no, 'buy', -buy[1]/buy[2], buy)
             trade_buy_no = buy[3]
 
     K = 10**18
