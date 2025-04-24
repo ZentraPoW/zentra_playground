@@ -334,8 +334,6 @@ def trade_limit_order(info, args):
                             prev_sell[3] = last_sell_id
                             put(addr, 'trade', f'{pair}_sell', prev_sell, str(prev_sell_id))
                     break
-                else:
-                    pass
 
                 if sell[3] is None:
                     break
@@ -379,7 +377,7 @@ def trade_limit_order(info, args):
                 break
             else:
                 # print('%s:%s'%(getframeinfo(currentframe()).filename, getframeinfo(currentframe()).lineno), 'price', -buy[1] / buy[2])
-                if (- value_1 / value_2) >= (- buy[1] / buy[2]):
+                if (- value_1 / value_2) > (- buy[1] / buy[2]):
                     prev_buy_id = buy[4]
                     put(addr, 'trade', f'{pair}_buy', [addr, value_1, value_2, trade_buy_no, prev_buy_id], str(trade_buy_end))
                     if prev_buy_id is None:
@@ -403,15 +401,16 @@ def trade_limit_order(info, args):
                             prev_buy[3] = last_buy_id
                             put(addr, 'trade', f'{pair}_buy', prev_buy, str(prev_buy_id))
                     break
-                else:
-                    put(addr, 'trade', f'{pair}_buy', [addr, value_1, value_2, None, None], str(trade_buy_end))
-
-                    trade_buy_end += 1
-                    # print('trade_buy_end', trade_buy_end)
-                    put(addr, 'trade', 'buy_end', trade_buy_end)
 
                 if buy[3] is None:
+                    put(addr, 'trade', f'{pair}_buy', [addr, value_1, value_2, None, trade_buy_no], str(trade_buy_end))
+                    put(addr, 'trade', f'{pair}_buy', [buy[0], buy[1], buy[2], trade_buy_end, buy[4]], str(trade_buy_no))
+                    print('trade_buy_end', trade_buy_end)
+                    trade_buy_end += 1
+                    put(addr, 'trade', 'buy_end', trade_buy_end)
                     break
+
+                print('trade_buy_no', trade_buy_no)
                 trade_buy_no = buy[3]
 
         # THIS IS FOR DEBUG
