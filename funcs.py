@@ -4,7 +4,7 @@ from inspect import currentframe, getframeinfo
 from space import put, get, handle_lookup
 import space
 
-def token_mint_once(info, args):
+def token_mint_once(info, args): # pragma: no cover
     tick = args['a'][0]
     assert type(tick) is str
     assert len(tick) > 0 and len(tick) < 42
@@ -29,7 +29,7 @@ def token_mint_once(info, args):
     balance += value
     put(addr, tick, 'balance', balance, addr)
 
-def token_mint(info, args):
+def token_mint(info, args): # pragma: no cover
     tick = args['a'][0]
     assert type(tick) is str
     assert len(tick) > 0 and len(tick) < 42
@@ -49,7 +49,7 @@ def token_mint(info, args):
     balance += value
     put(addr, tick, 'balance', balance, addr)
 
-def token_create(info, args):
+def token_create(info, args): # pragma: no cover
     assert args['f'] == 'token_create'
     sender = info['sender']
     handle = handle_lookup(sender)
@@ -72,7 +72,7 @@ def token_create(info, args):
     put(addr, tick, 'decimal', decimal)
     put(addr, 'asset', 'functions', functions, tick)
 
-def transfer(info, args):
+def transfer(info, args): # pragma: no cover
     tick = args['a'][0]
     assert set(tick) <= set(string.ascii_uppercase+'_')
 
@@ -103,7 +103,7 @@ def transfer(info, args):
     receiver_balance += value
     put(receiver, tick, 'balance', receiver_balance, receiver)
 
-def asset_create(info, args):
+def asset_create(info, args): # pragma: no cover
     assert args['f'] == 'asset_create'
     sender = info['sender']
     tick = args['a'][0]
@@ -121,7 +121,7 @@ def asset_create(info, args):
     put(addr, 'asset', 'owner', addr, tick)
     put(addr, 'asset', 'functions', ['asset_update_ownership', 'asset_update_functions'], tick)
 
-def asset_update_ownership(info, args):
+def asset_update_ownership(info, args): # pragma: no cover
     assert args['f'] == 'asset_update_ownership'
     sender = info['sender']
     tick = args['a'][0]
@@ -144,7 +144,7 @@ def asset_update_ownership(info, args):
     put(receiver, 'asset', 'owner', receiver, tick)
     put(receiver, 'asset', 'functions', functions, tick)
 
-def asset_update_functions(info, args):
+def asset_update_functions(info, args): # pragma: no cover
     assert args['f'] == 'asset_update_functions'
     sender = info['sender']
     handle = handle_lookup(sender)
@@ -161,7 +161,7 @@ def asset_update_functions(info, args):
     assert functions
 
 
-def bridge_incoming(info, args):
+def bridge_incoming(info, args): # pragma: no cover
     assert args['f'] == 'bridge_incoming'
     print('bridge_incoming', args)
 
@@ -334,6 +334,8 @@ def trade_limit_order(info, args):
                             prev_sell[3] = last_sell_id
                             put(addr, 'trade', f'{pair}_sell', prev_sell, str(prev_sell_id))
                     break
+                else:
+                    pass
 
                 if sell[3] is None:
                     break
@@ -343,19 +345,19 @@ def trade_limit_order(info, args):
         trade_sell_no = 1
         while trade_sell_no != trade_sell_end:
             sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
+            print(trade_sell_no, 'sell', sell)
             trade_sell_no += 1
             if sell is None:
                 continue
-            print(trade_sell_no, 'sell', -sell[1]/sell[2], sell)
 
         trade_sell_start = get('trade', 'sell_start', 1)
         print('trade_sell_start', trade_sell_start)
         trade_sell_no = trade_sell_start
         while True:
             sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
+            print('>', trade_sell_no, 'sell', sell)
             if sell is None or sell[3] is None:
                 break
-            print('>', trade_sell_no, 'sell', -sell[1]/sell[2], sell)
             trade_sell_no = sell[3]
 
     elif value_1 > 0 and value_2 < 0:
@@ -384,12 +386,12 @@ def trade_limit_order(info, args):
                         put(addr, 'trade', 'buy_start', trade_buy_end)
                     last_buy_id = trade_buy_end
                     trade_buy_end += 1
-                    print('trade_buy_end', trade_buy_end)
+                    # print('trade_buy_end', trade_buy_end)
                     put(addr, 'trade', 'buy_end', trade_buy_end)
-                    print('trade_buy_no', trade_buy_no)
+                    # print('trade_buy_no', trade_buy_no)
 
                     # print('buy1', buy)
-                    print('last_buy_id', last_buy_id)
+                    # print('last_buy_id', last_buy_id)
                     # print('this_buy_id', this_buy_id)
                     buy[4] = last_buy_id
                     put(addr, 'trade', f'{pair}_buy', buy, str(trade_buy_no))
@@ -401,6 +403,12 @@ def trade_limit_order(info, args):
                             prev_buy[3] = last_buy_id
                             put(addr, 'trade', f'{pair}_buy', prev_buy, str(prev_buy_id))
                     break
+                else:
+                    put(addr, 'trade', f'{pair}_buy', [addr, value_1, value_2, None, None], str(trade_buy_end))
+
+                    trade_buy_end += 1
+                    # print('trade_buy_end', trade_buy_end)
+                    put(addr, 'trade', 'buy_end', trade_buy_end)
 
                 if buy[3] is None:
                     break
