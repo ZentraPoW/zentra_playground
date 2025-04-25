@@ -110,6 +110,34 @@ def test2():
     space.nextblock()
 
 
+def test2b():
+    prepare()
+
+    print('1======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x002'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', 10, 'USDT', -10]})
+    print(space.states[-1])
+    space.nextblock()
+
+    print('2======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x001'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', 10, 'USDT', -10]})
+    print(space.states[-1])
+    space.nextblock()
+
+    print('3======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x001'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', 20, 'USDT', -20]})
+    print(space.states[-1])
+
+    print('4======trade_market_order')
+    funcs.trade_market_order({'sender':'0x002'}, {'p': 'zen', 'f': 'trade_market_order', 'a':['BTC', -20, 'USDT', None]})
+    print(space.states[-1])
+    space.nextblock()
+
+    print('5======trade_market_order')
+    funcs.trade_market_order({'sender':'0x001'}, {'p': 'zen', 'f': 'trade_market_order', 'a':['BTC', -10, 'USDT', None]})
+    print(space.states[-1])
+    space.nextblock()
+
+
 def test3():
     prepare()
 
@@ -217,9 +245,85 @@ def test6():
     space.nextblock()
 
 
+def test7():
+    prepare()
+
+    print('1======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x002'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', -10, 'USDT', 10]})
+    print(space.states[-1])
+    space.nextblock()
+
+    print('2======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x001'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', -9, 'USDT', 10]})
+    print(space.states[-1])
+    space.nextblock()
+
+    print('3======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x001'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', -17, 'USDT', 20]})
+    print(space.states[-1])
+
+
+
+    print('1======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x002'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', -11, 'USDT', 10]})
+    print(space.states[-1])
+    space.nextblock()
+
+    print('2======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x001'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', -12, 'USDT', 10]})
+    print(space.states[-1])
+    space.nextblock()
+
+    print('3======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x001'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', -25, 'USDT', 20]})
+    print(space.states[-1])
+
+    funcs.trade_limit_order({'sender':'0x001'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', 10, 'USDT', -10]})
+    print(space.states[-1])
+
+
+def test8():
+    prepare()
+
+    print('1======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x002'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', 10, 'USDT', -10]})
+    print(space.states[-1])
+    space.nextblock()
+
+    print('2======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x001'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', 9, 'USDT', -10]})
+    print(space.states[-1])
+    space.nextblock()
+
+    print('3======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x001'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', 17, 'USDT', -20]})
+    print(space.states[-1])
+
+
+
+    print('1======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x002'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', 11, 'USDT', -10]})
+    print(space.states[-1])
+    space.nextblock()
+
+    print('2======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x001'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', 12, 'USDT', -10]})
+    print(space.states[-1])
+    space.nextblock()
+
+    print('3======trade_limit_order')
+    funcs.trade_limit_order({'sender':'0x001'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', 25, 'USDT', -20]})
+    print(space.states[-1])
+
+    funcs.trade_limit_order({'sender':'0x001'}, {'p': 'zen', 'f': 'trade_limit_order', 'a':['BTC', -10, 'USDT', 10]})
+    print(space.states[-1])
+
 test1()
 test2()
+test2b()
 test3()
 test4()
 test5()
 test6()
+test7()
+test8()

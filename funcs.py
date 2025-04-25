@@ -336,8 +336,15 @@ def trade_limit_order(info, args):
                     break
 
                 if sell[3] is None:
+                    put(addr, 'trade', f'{pair}_sell', [addr, value_1, value_2, None, trade_sell_no], str(trade_sell_end))
+                    put(addr, 'trade', f'{pair}_sell', [sell[0], sell[1], sell[2], trade_sell_end, sell[4]], str(trade_sell_no))
+                    print('trade_sell_end', trade_sell_end)
+                    trade_sell_end += 1
+                    put(addr, 'trade', 'sell_end', trade_sell_end)
                     break
-            trade_sell_no = sell[3]
+
+                print('trade_sell_no', trade_sell_no)
+                trade_sell_no = sell[3]
 
         # THIS IS FOR DEBUG
         trade_sell_no = 1
@@ -345,8 +352,8 @@ def trade_limit_order(info, args):
             sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
             print(trade_sell_no, 'sell', sell)
             trade_sell_no += 1
-            if sell is None:
-                continue
+            # if sell is None:
+            #     continue
 
         trade_sell_start = get('trade', 'sell_start', 1)
         print('trade_sell_start', trade_sell_start)
@@ -419,8 +426,8 @@ def trade_limit_order(info, args):
             buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
             print(trade_buy_no, 'buy', buy)
             trade_buy_no += 1
-            if buy is None:
-                continue
+            # if buy is None:
+            #     continue
 
         trade_buy_start = get('trade', 'buy_start', 1)
         print('trade_buy_start', trade_buy_start)
@@ -552,12 +559,9 @@ def trade_market_order(info, args):
         trade_buy_no = trade_buy_start
         while True:
             buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
-            if buy is None or buy[3] is None:
+            if buy is None:
                 break
             print('>', trade_buy_no, 'buy', -buy[1]/buy[2], buy)
-            trade_buy_no = buy[3]
-
-            buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
 
             price = - buy[2] * K // buy[1]
             print(price, buy)
@@ -568,6 +572,8 @@ def trade_market_order(info, args):
             print('dx1', dx, buy)
             if buy[1] == 0 and buy[2] == 0:
                 put('', 'trade', f'{pair}_buy', None, str(trade_buy_no))
+                # TODO set trade_buy_start to buy[3]
+                put('', 'trade', 'buy_start', buy[3])
             else:
                 put('', 'trade', f'{pair}_buy', buy, str(trade_buy_no))
 
@@ -577,10 +583,13 @@ def trade_market_order(info, args):
             assert sender_balance >= 0
             put(handle, tick_2, 'balance', sender_balance, handle)
 
+            if buy[3] is None:
+                break
+            trade_buy_no = buy[3]
+
             value_1 += dx
             print('value_1', value_1)
-            if value_1 > 0:
-                raise
+            assert value_1 <= 0
             if value_1 == 0:
                 print('value_1 break')
                 break
@@ -602,12 +611,10 @@ def trade_market_order(info, args):
         trade_sell_no = trade_sell_start
         while True:
             sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
-            # print('>', trade_sell_no, 'sell', -sell[1]/sell[2], sell)
-            if sell is None or sell[3] is None:
+            if sell is None:
                 break
-            trade_sell_no = sell[3]
+            print('>', trade_sell_no, 'sell', -sell[1]/sell[2], sell)
 
-            sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
             price = - sell[1] * K // sell[2]
             print(price, sell)
             dx = min(-sell[1], sell[2] * K // price, -value_2)
@@ -617,6 +624,7 @@ def trade_market_order(info, args):
             print('dx2', dx, sell)
             if sell[1] == 0 and sell[2] == 0:
                 put('', 'trade', f'{pair}_sell', None, str(trade_sell_no))
+                # TODO set trade_sell_start to sell[3]
             else:
                 put('', 'trade', f'{pair}_sell', sell, str(trade_sell_no))
 
@@ -626,10 +634,13 @@ def trade_market_order(info, args):
             assert sender_balance >= 0
             put(handle, tick_1, 'balance', sender_balance, handle)
 
+            if sell[3] is None:
+                break
+            trade_sell_no = sell[3]
+
             value_2 += dx
             # print(value_2)
-            if value_2 > 0:
-                raise
+            assert value_2 <= 0
             if value_2 == 0:
                 # print('value_2 break')
                 break
