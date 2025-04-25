@@ -448,26 +448,23 @@ def trade_limit_order(info, args):
     trade_sell_start = get('trade', 'sell_start', 1)
 
     trade_sell_no = trade_sell_start
-    while trade_sell_no != trade_sell_end:
+    while True:
         sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
         print('sell', sell)
         if not sell:
-            trade_sell_no += 1 # TODO change to link list
-            continue
-
+            break
         sell_price = - sell[2] * K // sell[1]
         buy_to_remove = set([])
 
         trade_buy_no = trade_buy_start
-        while trade_buy_no != trade_buy_end:
+        while True:
             buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
             print('buy', buy)
             if not buy:
-                trade_buy_no += 1 # TODO change to link list
-                continue
+                break
             buy_price = - buy[2] * K // buy[1]
             if sell_price > buy_price:
-                trade_buy_no += 1
+                trade_buy_no = buy[3]
                 continue
 
             matched_price = (buy_price + sell_price) // 2
@@ -498,7 +495,9 @@ def trade_limit_order(info, args):
                 if buy[2] != 0:
                     buy_to_refund.append(buy)
 
-            trade_buy_no += 1 # TODO change to link list
+            if buy[3] is None:
+                break
+            trade_buy_no = buy[3]
 
         for i in buy_to_remove:
             put('', 'trade', f'{pair}_buy', None, str(i))
@@ -509,7 +508,9 @@ def trade_limit_order(info, args):
             if sell[2] * K // matched_price == 0:
                 sell_to_refund.append(sell)
 
-        trade_sell_no += 1 # TODO change to link list
+        if sell[3] is None:
+            break
+        trade_sell_no = sell[3]
 
     for i in sell_to_remove:
         put('', 'trade', f'{pair}_sell', None, str(i))
