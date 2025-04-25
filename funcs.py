@@ -444,12 +444,15 @@ def trade_limit_order(info, args):
     buy_to_refund = []
 
     sell_to_remove = set([])
+    trade_buy_start = get('trade', 'buy_start', 1)
+    trade_sell_start = get('trade', 'sell_start', 1)
+
     trade_sell_no = trade_sell_start
     while trade_sell_no != trade_sell_end:
         sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
         print('sell', sell)
         if not sell:
-            trade_sell_no += 1
+            trade_sell_no += 1 # TODO change to link list
             continue
 
         sell_price = - sell[2] * K // sell[1]
@@ -460,7 +463,7 @@ def trade_limit_order(info, args):
             buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
             print('buy', buy)
             if not buy:
-                trade_buy_no += 1
+                trade_buy_no += 1 # TODO change to link list
                 continue
             buy_price = - buy[2] * K // buy[1]
             if sell_price > buy_price:
@@ -495,7 +498,7 @@ def trade_limit_order(info, args):
                 if buy[2] != 0:
                     buy_to_refund.append(buy)
 
-            trade_buy_no += 1
+            trade_buy_no += 1 # TODO change to link list
 
         for i in buy_to_remove:
             put('', 'trade', f'{pair}_buy', None, str(i))
@@ -506,7 +509,7 @@ def trade_limit_order(info, args):
             if sell[2] * K // matched_price == 0:
                 sell_to_refund.append(sell)
 
-        trade_sell_no += 1
+        trade_sell_no += 1 # TODO change to link list
 
     for i in sell_to_remove:
         put('', 'trade', f'{pair}_sell', None, str(i))
@@ -543,9 +546,7 @@ def trade_market_order(info, args):
         assert value_2 < 0
 
     trade_sell_start = get('trade', 'sell_start', 1)
-    # trade_sell_end = get('trade', 'sell_end', 1)
     trade_buy_start = get('trade', 'buy_start', 1)
-    # trade_buy_end = get('trade', 'buy_end', 1)
 
     K = 10**18
     if value_2 is None and value_1 < 0:
@@ -572,8 +573,11 @@ def trade_market_order(info, args):
             print('dx1', dx, buy)
             if buy[1] == 0 and buy[2] == 0:
                 put('', 'trade', f'{pair}_buy', None, str(trade_buy_no))
-                # TODO set trade_buy_start to buy[3]
-                put('', 'trade', 'buy_start', buy[3])
+                if buy[3] is None:
+                    trade_buy_end = get('trade', 'buy_end', 1)
+                    put('', 'trade', 'buy_start', trade_buy_end)
+                else:
+                    put('', 'trade', 'buy_start', buy[3])
             else:
                 put('', 'trade', f'{pair}_buy', buy, str(trade_buy_no))
 
@@ -619,12 +623,16 @@ def trade_market_order(info, args):
             print(price, sell)
             dx = min(-sell[1], sell[2] * K // price, -value_2)
             # print('price', -sell[1], sell[2] * K // price, -value_2)
-            sell[1] -= dx
-            sell[2] += dx * price // K
+            sell[1] += dx
+            sell[2] -= dx * price // K
             print('dx2', dx, sell)
             if sell[1] == 0 and sell[2] == 0:
                 put('', 'trade', f'{pair}_sell', None, str(trade_sell_no))
-                # TODO set trade_sell_start to sell[3]
+                if sell[3] is None:
+                    trade_sell_end = get('trade', 'sell_end', 1)
+                    put('', 'trade', 'sell_start', trade_sell_end)
+                else:
+                    put('', 'trade', 'sell_start', sell[3])
             else:
                 put('', 'trade', f'{pair}_sell', sell, str(trade_sell_no))
 
