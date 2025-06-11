@@ -163,7 +163,7 @@ def asset_update_functions(info, args): # pragma: no cover
 
 def bridge_incoming(info, args): # pragma: no cover
     assert args['f'] == 'bridge_incoming'
-    print('bridge_incoming', args)
+    # print('bridge_incoming', args)
 
     tick = args['a'][0]
     assert type(tick) is str
@@ -278,383 +278,316 @@ def trade_limit_order(info, args):
     handle = handle_lookup(sender)
     addr = handle or sender
 
-    tick_1 = args['a'][0]
-    tick_2 = args['a'][2]
-    assert set(tick_1) <= set(string.ascii_uppercase+'_')
-    assert set(tick_2) <= set(string.ascii_uppercase+'_')
-    assert tick_1 < tick_2
-    pair = '%s_%s' % tuple([tick_1, tick_2])
+    base_tick = args['a'][0]
+    quote_tick = args['a'][2]
+    assert set(base_tick) <= set(string.ascii_uppercase+'_')
+    assert set(quote_tick) <= set(string.ascii_uppercase+'_')
+    pair = '%s_%s' % tuple([base_tick, quote_tick])
 
-    value_1 = int(args['a'][1])
-    value_2 = int(args['a'][3])
-
-    print('pair', pair, value_1, value_2)
-    assert value_1 * value_2 < 0
-
-    trade_sell_start = get('trade', 'sell_start', 1)
-    trade_sell_end = get('trade', 'sell_end', 1)
-    trade_buy_start = get('trade', 'buy_start', 1)
-    trade_buy_end = get('trade', 'buy_end', 1)
-    if value_1 < 0 and value_2 > 0:
-        sender_balance = get(tick_1, 'balance', 0, addr)
-        # print('tick_1 balance', sender_balance, value_1, sender_balance + value_1)
-        sender_balance += value_1
-        assert sender_balance >= 0
-        put(addr, tick_1, 'balance', sender_balance, addr)
-
-        trade_sell_no = trade_sell_start
-        while True:
-            sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
-            # print('%s:%s'%(getframeinfo(currentframe()).filename, getframeinfo(currentframe()).lineno), trade_sell_no, sell)
-            if sell is None:
-                put(addr, 'trade', f'{pair}_sell', [addr, value_1, value_2, None, None], str(trade_sell_end))
-                trade_sell_end += 1
-                put(addr, 'trade', 'sell_end', trade_sell_end)
-                break
-            else:
-                # print('%s:%s'%(getframeinfo(currentframe()).filename, getframeinfo(currentframe()).lineno), 'price', -sell[1] / sell[2])
-                if (- value_1 / value_2) <= (- sell[1] / sell[2]):
-                    prev_sell_id = sell[4]
-                    put(addr, 'trade', f'{pair}_sell', [addr, value_1, value_2, trade_sell_no, prev_sell_id], str(trade_sell_end))
-                    if prev_sell_id is None:
-                        put(addr, 'trade', 'sell_start', trade_sell_end)
-                    last_sell_id = trade_sell_end
-                    trade_sell_end += 1
-                    print('trade_sell_end', trade_sell_end)
-                    put(addr, 'trade', 'sell_end', trade_sell_end)
-                    print('trade_sell_no', trade_sell_no)
-
-                    print('last_sell_id', last_sell_id)
-                    sell[4] = last_sell_id
-                    put(addr, 'trade', f'{pair}_sell', sell, str(trade_sell_no))
-                    if prev_sell_id is not None:
-                        print('prev_buy_id', prev_sell_id)
-                        prev_sell = get('trade', f'{pair}_sell', None, str(prev_sell_id))
-                        if prev_sell is not None:
-                            prev_sell[3] = last_sell_id
-                            put(addr, 'trade', f'{pair}_sell', prev_sell, str(prev_sell_id))
-                    break
-
-                if sell[3] is None:
-                    put(addr, 'trade', f'{pair}_sell', [addr, value_1, value_2, None, trade_sell_no], str(trade_sell_end))
-                    put(addr, 'trade', f'{pair}_sell', [sell[0], sell[1], sell[2], trade_sell_end, sell[4]], str(trade_sell_no))
-                    print('trade_sell_end', trade_sell_end)
-                    trade_sell_end += 1
-                    put(addr, 'trade', 'sell_end', trade_sell_end)
-                    break
-
-                print('trade_sell_no', trade_sell_no)
-                trade_sell_no = sell[3]
-
-        # THIS IS FOR DEBUG
-        trade_sell_no = 1
-        while trade_sell_no != trade_sell_end:
-            sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
-            print(trade_sell_no, 'sell', sell)
-            trade_sell_no += 1
-            # if sell is None:
-            #     continue
-
-        trade_sell_start = get('trade', 'sell_start', 1)
-        print('trade_sell_start', trade_sell_start)
-        trade_sell_no = trade_sell_start
-        while True:
-            sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
-            print('>', trade_sell_no, 'sell', sell)
-            if sell is None or sell[3] is None:
-                break
-            trade_sell_no = sell[3]
-
-    elif value_1 > 0 and value_2 < 0:
-        sender_balance = get(tick_2, 'balance', 0, addr)
-        # print('tick_2 balance', sender_balance, value_2, sender_balance + value_2)
-        print('price', -value_1 / value_2)
-        sender_balance += value_2
-        assert sender_balance >= 0
-        put(addr, tick_2, 'balance', sender_balance, addr)
-
-        trade_buy_no = trade_buy_start
-        while True:
-            buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
-            # print('%s:%s'%(getframeinfo(currentframe()).filename, getframeinfo(currentframe()).lineno), trade_buy_no, buy)
-            if buy is None:
-                put(addr, 'trade', f'{pair}_buy', [addr, value_1, value_2, None, None], str(trade_buy_end))
-                trade_buy_end += 1
-                put(addr, 'trade', 'buy_end', trade_buy_end)
-                break
-            else:
-                # print('%s:%s'%(getframeinfo(currentframe()).filename, getframeinfo(currentframe()).lineno), 'price', -buy[1] / buy[2])
-                if (- value_1 / value_2) > (- buy[1] / buy[2]):
-                    prev_buy_id = buy[4]
-                    put(addr, 'trade', f'{pair}_buy', [addr, value_1, value_2, trade_buy_no, prev_buy_id], str(trade_buy_end))
-                    if prev_buy_id is None:
-                        put(addr, 'trade', 'buy_start', trade_buy_end)
-                    last_buy_id = trade_buy_end
-                    trade_buy_end += 1
-                    # print('trade_buy_end', trade_buy_end)
-                    put(addr, 'trade', 'buy_end', trade_buy_end)
-                    # print('trade_buy_no', trade_buy_no)
-
-                    # print('buy1', buy)
-                    # print('last_buy_id', last_buy_id)
-                    # print('this_buy_id', this_buy_id)
-                    buy[4] = last_buy_id
-                    put(addr, 'trade', f'{pair}_buy', buy, str(trade_buy_no))
-                    if prev_buy_id is not None:
-                        print('prev_buy_id', prev_buy_id)
-                        prev_buy = get('trade', f'{pair}_buy', None, str(prev_buy_id))
-                        # print('prev_buy', prev_buy)
-                        if prev_buy is not None:
-                            prev_buy[3] = last_buy_id
-                            put(addr, 'trade', f'{pair}_buy', prev_buy, str(prev_buy_id))
-                    break
-
-                if buy[3] is None:
-                    put(addr, 'trade', f'{pair}_buy', [addr, value_1, value_2, None, trade_buy_no], str(trade_buy_end))
-                    put(addr, 'trade', f'{pair}_buy', [buy[0], buy[1], buy[2], trade_buy_end, buy[4]], str(trade_buy_no))
-                    print('trade_buy_end', trade_buy_end)
-                    trade_buy_end += 1
-                    put(addr, 'trade', 'buy_end', trade_buy_end)
-                    break
-
-                print('trade_buy_no', trade_buy_no)
-                trade_buy_no = buy[3]
-
-        # THIS IS FOR DEBUG
-        trade_buy_no = 1
-        while trade_buy_no != trade_buy_end:
-            buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
-            print(trade_buy_no, 'buy', buy)
-            trade_buy_no += 1
-            # if buy is None:
-            #     continue
-
-        trade_buy_start = get('trade', 'buy_start', 1)
-        print('trade_buy_start', trade_buy_start)
-        trade_buy_no = trade_buy_start
-        while True:
-            buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
-            print('>', trade_buy_no, 'buy', buy)
-            if buy is None or buy[3] is None:
-                break
-            trade_buy_no = buy[3]
-
+    base_value = int(args['a'][1])
+    quote_value = int(args['a'][3])
+    assert base_value * quote_value < 0
     K = 10**18
+
+    trade_buy_start = get('trade', f'{pair}_buy_start', 1) # from maximum
+    trade_buy_new = get('trade', f'{pair}_buy_new', 1)
+    trade_sell_start = get('trade', f'{pair}_sell_start', 1) # from minimum
+    trade_sell_new = get('trade', f'{pair}_sell_new', 1)
+
+    # SORT AND INSERT
+    if base_value < 0 and quote_value > 0: # sell token get USDC
+        balance = get(base_tick, 'balance', 0, addr)
+        balance += base_value
+        assert balance >= 0
+        put(addr, base_tick, 'balance', balance, addr)
+
+        trade_sell_no = trade_sell_start
+        while True:
+            sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
+            price = - quote_value * K // base_value
+            if sell is None:
+                put(addr, 'trade', f'{pair}_sell', [addr, base_value, quote_value, price, None, None], str(trade_sell_new))
+                trade_sell_new += 1
+                put(addr, 'trade', f'{pair}_sell_new', trade_sell_new)
+                break
+
+            if price < sell[3]:
+                next_sell_id = sell[5]
+                put(addr, 'trade', f'{pair}_sell', [addr, base_value, quote_value, price, trade_sell_no, next_sell_id], str(trade_sell_new))
+                if next_sell_id is None:
+                    trade_sell_start = trade_sell_new
+                    put(addr, 'trade', f'{pair}_sell_start', trade_sell_start)
+                sell[5] = trade_sell_new
+                trade_sell_new += 1
+                put(addr, 'trade', f'{pair}_sell_new', trade_sell_new)
+
+                put(addr, 'trade', f'{pair}_sell', sell, str(trade_sell_no))
+                if next_sell_id is not None:
+                    next_sell = get('trade', f'{pair}_sell', None, str(next_sell_id))
+                    if next_sell is not None:
+                        next_sell[4] = sell[5]
+                        put(addr, 'trade', f'{pair}_sell', next_sell, str(next_sell_id))
+                break
+
+            if sell[4] is None:
+                put(addr, 'trade', f'{pair}_sell', [addr, base_value, quote_value, price, None, trade_sell_no], str(trade_sell_new))
+                put(addr, 'trade', f'{pair}_sell', [sell[0], sell[1], sell[2], sell[3], trade_sell_new, sell[5]], str(trade_sell_no))
+                trade_sell_new += 1
+                put(addr, 'trade', f'{pair}_sell_new', trade_sell_new)
+                break
+
+            trade_sell_no = sell[4]
+
+    elif base_value > 0 and quote_value < 0: # buy token with USDC
+        balance = get(quote_tick, 'balance', 0, addr)
+        balance += quote_value
+        assert balance >= 0
+        put(addr, quote_tick, 'balance', balance, addr)
+
+        trade_buy_no = trade_buy_start
+        while True:
+            buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
+            price = - quote_value * K // base_value
+            if buy is None:
+                buy = [addr, base_value, quote_value, price, None, None]
+                put(addr, 'trade', f'{pair}_buy', buy, str(trade_buy_new))
+                trade_buy_new += 1
+                put(addr, 'trade', f'{pair}_buy_new', trade_buy_new)
+                break
+
+            if price > buy[3]:
+                next_buy_id = buy[5]
+                put(addr, 'trade', f'{pair}_buy', [addr, base_value, quote_value, price, trade_buy_no, next_buy_id], str(trade_buy_new))
+                if next_buy_id is None:
+                    trade_buy_start = trade_buy_new
+                    put(addr, 'trade', f'{pair}_buy_start', trade_buy_start)
+                buy[5] = trade_buy_new
+                trade_buy_new += 1
+                put(addr, 'trade', f'{pair}_buy_new', trade_buy_new)
+
+                put(addr, 'trade', f'{pair}_buy', buy, str(trade_buy_no))
+                if next_buy_id is not None:
+                    next_buy = get('trade', f'{pair}_buy', None, str(next_buy_id))
+                    if next_buy is not None:
+                        next_buy[4] = buy[5]
+                        put(addr, 'trade', f'{pair}_buy', next_buy, str(next_buy_id))
+                break
+
+            if buy[4] is None:
+                put(addr, 'trade', f'{pair}_buy', [addr, base_value, quote_value, price, None, trade_buy_no], str(trade_buy_new))
+                put(addr, 'trade', f'{pair}_buy', [buy[0], buy[1], buy[2], buy[3], trade_buy_new, buy[5]], str(trade_buy_no))
+                trade_buy_new += 1
+                put(addr, 'trade', f'{pair}_buy_new', trade_buy_new)
+                break
+
+            trade_buy_no = buy[4]
+
+    # MATCHING
     sell_to_refund = []
     buy_to_refund = []
-
     sell_to_remove = set([])
-    trade_buy_start = get('trade', 'buy_start', 1)
-    trade_sell_start = get('trade', 'sell_start', 1)
-
     trade_sell_no = trade_sell_start
+    highest_buy_price = None
+
     while True:
         sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
-        print('sell', sell)
         if not sell:
             break
-        sell_price = - sell[2] * K // sell[1]
+        sell_price = sell[3]
+        if highest_buy_price and sell_price > highest_buy_price:
+            break
         buy_to_remove = set([])
 
         trade_buy_no = trade_buy_start
         while True:
             buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
-            print('buy', buy)
             if not buy:
                 break
-            buy_price = - buy[2] * K // buy[1]
+            buy_price = buy[3]
+            if highest_buy_price is None:
+                highest_buy_price = buy_price
             if sell_price > buy_price:
-                trade_buy_no = buy[3]
+                trade_buy_no = buy[4]
                 continue
 
-            matched_price = (buy_price + sell_price) // 2
-            dx = min(-sell[1], sell[2] * K // matched_price, buy[1])
-            print('match price', -sell[1], sell[2] * K // matched_price, buy[1], -buy[2] // matched_price)
-            print(dx, matched_price)
+            matched_price = sell_price
+            dx = min(-sell[1], buy[1])
             sell[1] += dx
             sell[2] -= dx * matched_price // K
-
             buy[1] -= dx
             buy[2] += dx * matched_price // K
 
-            sender_balance = get(tick_1, 'balance', 0, sell[0])
-            # print('tick_1 balance', sender_balance, sender_balance + dx)
-            sender_balance += dx
-            assert sender_balance >= 0
-            put(sell[0], tick_1, 'balance', sender_balance, sell[0])
+            balance = get(base_tick, 'balance', 0, buy[0])
+            balance += dx
+            assert balance >= 0
+            put(buy[0], base_tick, 'balance', balance, buy[0])
 
-            sender_balance = get(tick_2, 'balance', 0, buy[0])
-            # print('tick_2 balance', sender_balance, sender_balance + dx * matched_price // K, dx * matched_price // K)
-            sender_balance += dx * matched_price // K
-            assert sender_balance >= 0
-            put(buy[0], tick_2, 'balance', sender_balance, buy[0])
+            balance = get(quote_tick, 'balance', 0, sell[0])
+            balance += dx * matched_price // K
+            assert balance >= 0
+            put(sell[0], quote_tick, 'balance', balance, sell[0])
 
             if buy[1] == 0:
                 buy_to_remove.add(trade_buy_no)
 
                 if buy[2] != 0:
                     buy_to_refund.append(buy)
+            else:
+                put('', 'trade', f'{pair}_buy', buy, str(trade_buy_no))
 
-            if buy[3] is None:
+            if sell[1] == 0:
                 break
-            trade_buy_no = buy[3]
+            if buy[4] is None:
+                break
+            trade_buy_no = buy[4]
 
         for i in buy_to_remove:
             put('', 'trade', f'{pair}_buy', None, str(i))
 
         if sell[1] == 0:
             sell_to_remove.add(trade_sell_no)
+            if sell[4]:
+                prev_sell = get('trade', f'{pair}_sell', None, str(sell[4]))
+                prev_sell[5] = None
+                put('', 'trade', f'{pair}_sell', prev_sell, str(sell[4]))
+            trade_sell_start = sell[4] or trade_sell_new
 
-            if sell[2] * K // matched_price == 0:
+            if sell[2] > 0:
                 sell_to_refund.append(sell)
+        else:
+            put('', 'trade', f'{pair}_sell', sell, str(trade_sell_no))
 
-        if sell[3] is None:
+        if sell[4] is None:
             break
-        trade_sell_no = sell[3]
+        trade_sell_no = sell[4]
 
     for i in sell_to_remove:
         put('', 'trade', f'{pair}_sell', None, str(i))
+    put('', 'trade', f'{pair}_sell_start', trade_sell_start)
+    put('', 'trade', f'{pair}_buy_start', trade_buy_start)
 
     for i in buy_to_refund:
-        sender_balance = get(tick_2, 'balance', 0, i[0])
-        print('tick_2 balance', sender_balance, sender_balance - i[2])
-        sender_balance -= i[2]
-        assert sender_balance >= 0
-        put(i[0], tick_2, 'balance', sender_balance, i[0])
-
-    for i in sell_to_refund:
-        print('sell_to_refund', i)
+        balance = get(quote_tick, 'balance', 0, i[0])
+        balance -= i[2]
+        assert balance >= 0
+        put(i[0], quote_tick, 'balance', balance, i[0])
 
 
 def trade_market_order(info, args):
     assert args['f'] == 'trade_market_order'
     sender = info['sender']
     handle = handle_lookup(sender)
+    addr = handle or sender
 
-    tick_1 = args['a'][0]
-    tick_2 = args['a'][2]
-    assert set(tick_1) <= set(string.ascii_uppercase+'_')
-    assert set(tick_2) <= set(string.ascii_uppercase+'_')
-    assert tick_1 < tick_2
-    pair = '%s_%s' % tuple([tick_1, tick_2])
+    base_tick = args['a'][0]
+    quote_tick = args['a'][2]
+    assert set(base_tick) <= set(string.ascii_uppercase+'_')
+    assert set(quote_tick) <= set(string.ascii_uppercase+'_')
+    pair = '%s_%s' % tuple([base_tick, quote_tick])
 
-    value_1 = args['a'][1]
-    value_2 = args['a'][3]
-    print('pair', pair, value_1, value_2)
-    if value_2 is None:
-        assert value_1 < 0
-    elif value_1 is None:
-        assert value_2 < 0
-
-    trade_sell_start = get('trade', 'sell_start', 1)
-    trade_buy_start = get('trade', 'buy_start', 1)
+    base_value = args['a'][1]
+    quote_value = args['a'][3]
+    trade_sell_start = get('trade', f'{pair}_sell_start', 1)
+    trade_buy_start = get('trade', f'{pair}_buy_start', 1)
 
     K = 10**18
-    if value_2 is None and value_1 < 0:
-        sender_balance = get(tick_1, 'balance', 0, handle)
-        # print('tick_1 balance', sender_balance, value_1, sender_balance + value_1)
-        sender_balance += value_1
-        assert sender_balance >= 0
-        put(handle, tick_1, 'balance', sender_balance, handle) # consider delay put
+    if quote_value is None and base_value < 0:
+        balance = get(base_tick, 'balance', 0, addr)
+        balance += base_value
+        assert balance >= 0
 
-        print('trade_buy_start', trade_buy_start)
         trade_buy_no = trade_buy_start
         while True:
             buy = get('trade', f'{pair}_buy', None, str(trade_buy_no))
             if buy is None:
                 break
-            print('>', trade_buy_no, 'buy', -buy[1]/buy[2], buy)
 
             price = - buy[2] * K // buy[1]
-            print(price, buy)
-            dx = min(buy[1], -buy[2] * K // price, -value_1)
-            print('price', buy[1], -buy[2] * K // price, -value_1)
+            dx = min(buy[1], -buy[2] * K // price, -base_value)
             buy[1] -= dx
             buy[2] += dx * price // K
-            print('dx1', dx, buy)
             if buy[1] == 0 and buy[2] == 0:
                 put('', 'trade', f'{pair}_buy', None, str(trade_buy_no))
-                if buy[3] is None:
-                    trade_buy_end = get('trade', 'buy_end', 1)
-                    put('', 'trade', 'buy_start', trade_buy_end)
+                if buy[4] is None:
+                    trade_buy_new = get('trade', f'{pair}_buy_new', 1)
+                    put('', 'trade', f'{pair}_buy_start', trade_buy_new)
                 else:
-                    put('', 'trade', 'buy_start', buy[3])
+                    put('', 'trade', f'{pair}_buy_start', buy[4])
             else:
                 put('', 'trade', f'{pair}_buy', buy, str(trade_buy_no))
 
-            sender_balance = get(tick_2, 'balance', 0, handle)
-            # print('tick_2 balance2', sender_balance)
-            sender_balance += dx * price // K
-            assert sender_balance >= 0
-            put(handle, tick_2, 'balance', sender_balance, handle)
+            balance = get(base_tick, 'balance', 0, buy[0])
+            balance += dx
+            assert balance >= 0
+            put(addr, base_tick, 'balance', balance, buy[0])
 
-            if buy[3] is None:
-                break
-            trade_buy_no = buy[3]
+            balance = get(quote_tick, 'balance', 0, addr)
+            balance += dx * price // K
+            assert balance >= 0
+            put(addr, quote_tick, 'balance', balance, addr)
 
-            value_1 += dx
-            print('value_1', value_1)
-            assert value_1 <= 0
-            if value_1 == 0:
-                print('value_1 break')
+            base_value += dx
+            assert base_value <= 0
+            if base_value == 0:
                 break
 
-        print(value_1)
-        sender_balance = get(tick_1, 'balance', 0, handle)
-        sender_balance -= value_1
-        assert sender_balance >= 0
-        put(handle, tick_1, 'balance', sender_balance, handle)
+            if buy[4] is None:
+                break
+            trade_buy_no = buy[4]
 
-    elif value_1 is None and value_2 < 0:
-        sender_balance = get(tick_2, 'balance', 0, handle)
-        # print('tick_2 balance', sender_balance, value_2, sender_balance + value_2)
-        sender_balance += value_2
-        assert sender_balance >= 0
-        put(handle, tick_2, 'balance', sender_balance, handle)
+        balance = get(base_tick, 'balance', 0, addr)
+        balance -= base_value
+        assert balance >= 0
+        put(addr, base_tick, 'balance', balance, addr)
 
-        print('trade_sell_start', trade_sell_start)
+    elif base_value is None and quote_value < 0:
+        balance = get(quote_tick, 'balance', 0, addr)
+        balance += quote_value
+        assert balance >= 0
+        put(addr, quote_tick, 'balance', balance, addr)
+
         trade_sell_no = trade_sell_start
         while True:
             sell = get('trade', f'{pair}_sell', None, str(trade_sell_no))
             if sell is None:
                 break
-            print('>', trade_sell_no, 'sell', -sell[1]/sell[2], sell)
 
-            price = - sell[1] * K // sell[2]
-            print(price, sell)
-            dx = min(-sell[1], sell[2] * K // price, -value_2)
-            # print('price', -sell[1], sell[2] * K // price, -value_2)
+            price = - sell[2] * K // sell[1]
+            dx = min(-sell[1], -quote_value * K // price)
             sell[1] += dx
             sell[2] -= dx * price // K
-            print('dx2', dx, sell)
             if sell[1] == 0 and sell[2] == 0:
                 put('', 'trade', f'{pair}_sell', None, str(trade_sell_no))
-                if sell[3] is None:
-                    trade_sell_end = get('trade', 'sell_end', 1)
-                    put('', 'trade', 'sell_start', trade_sell_end)
+                if sell[4] is None:
+                    trade_sell_new = get('trade', f'{pair}_sell_new', 1)
+                    put('', 'trade', f'{pair}_sell_start', trade_sell_new)
                 else:
-                    put('', 'trade', 'sell_start', sell[3])
+                    put('', 'trade', f'{pair}_sell_start', sell[4])
             else:
                 put('', 'trade', f'{pair}_sell', sell, str(trade_sell_no))
 
-            sender_balance = get(tick_1, 'balance', 0, handle)
-            # print('tick_1 balance', sender_balance)
-            sender_balance += dx * price // K
-            assert sender_balance >= 0
-            put(handle, tick_1, 'balance', sender_balance, handle)
+            balance = get(base_tick, 'balance', 0, addr)
+            balance += dx
+            assert balance >= 0
+            put(addr, base_tick, 'balance', balance, addr)
 
-            if sell[3] is None:
-                break
-            trade_sell_no = sell[3]
+            balance = get(quote_tick, 'balance', 0, sell[0])
+            balance += dx * price // K
+            assert balance >= 0
+            put(addr, quote_tick, 'balance', balance, sell[0])
 
-            value_2 += dx
-            # print(value_2)
-            assert value_2 <= 0
-            if value_2 == 0:
-                # print('value_2 break')
+            quote_value += dx * price // K
+            assert quote_value <= 0
+            if quote_value == 0:
                 break
 
-        sender_balance = get(tick_2, 'balance', 0, handle)
-        sender_balance -= value_2
-        assert sender_balance >= 0
-        put(handle, tick_2, 'balance', sender_balance, handle)
+            if sell[4] is None:
+                break
+            trade_sell_no = sell[4]
+
+        balance = get(quote_tick, 'balance', 0, addr)
+        balance -= quote_value
+        assert balance >= 0
+        put(addr, quote_tick, 'balance', balance, addr)
+
+
